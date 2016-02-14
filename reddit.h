@@ -22,7 +22,7 @@ public:
 	Reddit();
         void setOAuthInfo(string username1, string password1, string client_id1, string client_secret1, string user_agent1);
         void authenticate();
-	int getKarma(string user);
-
+	int commentKarma(string user);
+	int linkKarma(string user);
 
 };

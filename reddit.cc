@@ -52,7 +52,6 @@ void Reddit::authenticate(){
         access_token = root.get("access_token", "default_token" ).asString();
 	cout << "Authenticated with access token: " << access_token << endl;	
 	
-
 	// initialize the autorization token and user-agent headers to be sent with every request
 	string header_1 = "Authorization: bearer " + access_token;
         const char *header = header_1.c_str();
@@ -64,7 +63,7 @@ void Reddit::authenticate(){
 
 }
 
-int Reddit::getKarma(string user){
+int Reddit::commentKarma(string user){
 	string resString;
 	curl = curl_easy_init();
         if(curl) {
@@ -95,12 +94,46 @@ int Reddit::getKarma(string user){
 	return karma;
 }
 
+int Reddit::linkKarma(string user){
+        string resString;
+        curl = curl_easy_init();
+        if(curl) {
+                string data_1 = "https://oauth.reddit.com/user/"+user+"/about.json";
+                const char *data = data_1.c_str();
+                curl_easy_setopt(curl, CURLOPT_URL, data);
+                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resString);
+
+                // Perform the request, res will get the return code  
+                res = curl_easy_perform(curl);
+                // Check for errors  
+                if(res != CURLE_OK)
+                        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                        curl_easy_strerror(res));
+
+                // always cleanup  
+                curl_easy_cleanup(curl);
+        }
+        // convert res from CURLcode to a string, to be used with JSON parser
+        Json::Value root;
+        std::stringstream ss;
+        ss << resString;
+        ss >> root;
+        Json::Value data = root["data"];
+        int karma= data.get("link_karma", -1 ).asInt();
+        return karma;
+}
+
+
+
+
 // TESTS
 int main(void){
 
         Reddit *r = new Reddit;
         r->setOAuthInfo(<USERNAME>, <PASSWORD>, <CLIENT_ID>, <CLIENT_SECRET> ,<CUSTOM_USER_AGENT>);
         r->authenticate();
-	int karma = r->getKarma(<SOME_USERNAME>);
-
+	int comment_karma = r->commentKarma(<SOME_USERNAME>);
+	int link_karma = r->linkKarma(<SOME_USERNAME>);
 }
